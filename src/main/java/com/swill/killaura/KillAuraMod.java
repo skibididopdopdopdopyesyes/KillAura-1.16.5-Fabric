@@ -2,23 +2,39 @@ package com.swill.killaura;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.util.Hand;
+import net.minecraft.util.math.Box;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.List;
+import java.util.Random;
+
 public class KillAuraMod implements ClientModInitializer {
-    public static KillAuraModule killAura = new KillAuraModule();
-    public static KeyBinding toggleKey;
+    private static boolean enabled = false;
+    private static long lastAttack = 0;
+    private static final Random random = new Random();
 
     @Override
     public void onInitializeClient() {
-        toggleKey = new KeyBinding(
-            "key.killaura.toggle",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_R,
-            "category.killaura"
-        );
-        // Регистрация через Fabric API всё равно нужна, но её нет.
-        // Поэтому лучше использовать KeyBindingHelper (требует Fabric API).
+        KeyBinding key = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "KillAura", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_R, "Swill Cheats"));
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (key.wasPressed()) enabled = !enabled;
+            if (!enabled || client.player == null) return;
+            Box box = client.player.getBoundingBox().expand(4.5);
+            List<LivingEntity> targets = client.world.getEntitiesByClass(LivingEntity.class, box,
+                    e -> e != client.player && e.isAlive() && e.getHealth() > 0);
+            if (targets.isEmpty()) return;
+            LivingEntity target = targets.stream().min((a,b) -> Double.compare(a.getHealth(), b.getHealth())).get();
+            if (System.currentTimeMillis() - lastAttack >= (50 + random.nextInt(100))) {
+                client.interactionManager.attackEntity(client.player, target);
+                client.player.swingHand(Hand.MAIN_HAND);
+                lastAttack = System.currentTimeMillis();
+            }
+        });
     }
 }
