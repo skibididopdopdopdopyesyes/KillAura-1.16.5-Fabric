@@ -3,14 +3,13 @@
   "id": "killaura",
   "version": "1.0.0",
   "name": "KillAura",
-  "description": "Advanced combat cheat",
-  "authors": ["Swill"],
   "environment": "client",
   "entrypoints": {
     "client": ["com.swill.killaura.KillAuraMod"]
   },
   "depends": {
-    "minecraft": "1.16.5",
-    "fabricloader": ">=0.11.3"
+    "fabricloader": ">=0.11.3",
+    "fabric": "*",
+    "minecraft": "1.16.5"
   }
 }
